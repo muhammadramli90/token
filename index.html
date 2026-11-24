@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generator Resi Token Listrik PLN - SMAN 1 Sekatak</title>
+  <!-- Tailwind CSS CDN untuk tata letak antarmuka modern & responsif -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas CDN untuk ekspor kartu resi ke gambar PNG resolusi tinggi -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* ==========================================================================
+       1. KONFIGURASI FONT & TAMPILAN DASAR APLIKASI
+       ========================================================================== */
+    :root {
+      --receipt-font: 'Calibri', 'Segoe UI', Arial, sans-serif;
+    }
+
+    body {
+      font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ==========================================================================
+       2. GAYA KARTU RESI (100% AKURAT SESUAI SPESIFIKASI DOKUMEN ASLI)
+       ========================================================================== */
+    .receipt-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .receipt-card {
+      width: 410px;
+      max-width: 100%;
+      background-color: #ffffff;
+      font-family: var(--receipt-font);
+      color: #1f2937;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.1), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
+      overflow: hidden;
+      position: relative;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Banner SVG Poligon Geometris Biru Atas */
+    .receipt-banner {
+      width: 100%;
+      height: 64px;
+      display: block;
+      line-height: 0;
+    }
+
+    .receipt-banner svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Badan Konten Utama Resi */
+    .receipt-body {
+      padding: 6px 26px 28px 26px;
+    }
+
+    /* Nama Akun Kiri Atas */
+    .tx-name {
+      font-weight: 700;
+      font-size: 15px;
+      color: #111827;
+      line-height: 1.35;
+      margin: 0 0 3px 0;
+    }
+
+    /* Baris Tanggal & Order ID Sejajar Kiri-Kanan */
+    .tx-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-weight: 400;
+      font-size: 12px;
+      color: #4b5563;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .tx-meta-left {
+      text-align: left;
+    }
+
+    .tx-meta-right {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* Baris Status Transaksi Berhasil */
+    .tx-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #16a34a;
+      margin-top: 6px;
+      line-height: 1.3;
+    }
+
+    /* Garis Pemisah Horizontal Putus-putus */
+    .receipt-divider {
+      border: none;
+      border-bottom: 1px dashed #d1d5db;
+      margin: 12px 0;
+    }
+
+    /* Baris Produk & Baris Total */
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 13.5px;
+      color: #1f2937;
+      line-height: 1.4;
+    }
+
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      font-size: 14px;
+      color: #111827;
+      line-height: 1.4;
+      margin-bottom: 14px;
+    }
+
+    /* Judul Struk Pembelian Listrik Prabayar */
+    .struk-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: #111827;
+      text-transform: uppercase;
+      text-align: left;
+      letter-spacing: 0.15px;
+      margin: 4px 0 11px 0;
+    }
+
+    /* Daftar Rincian Struk (Menggunakan Flex agar Titik Dua Sejajar Vertikal Rapi) */
+    .struk-details {
+      font-size: 12.5px;
+      line-height: 1.56;
+      color: #1f2937;
+    }
+
+    .struk-row {
+      display: flex;
+      align-items: baseline;
+    }
+
+    .struk-label {
+      width: 126px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .struk-colon {
+      width: 10px;
+      flex-shrink: 0;
+      text-align: left;
+    }
+
+    .struk-value {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .struk-token-bold {
+      font-weight: 700;
+      color: #111827;
+      letter-spacing: 0.2px;
+    }
+
+    /* Footer Struk */
+    .struk-footer {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #374151;
+      line-height: 1.45;
+    }
+
+    .struk-footer p {
+      margin: 0;
+    }
+
+    .struk-footer .footer-legal {
+      margin-top: 10px;
+    }
+
+    /* Penyesuaian Layar Sangat Kecil (< 430px) */
+    @media (max-width: 430px) {
+      .receipt-body {
+        padding: 6px 16px 24px 16px;
+      }
+      .tx-meta-row {
+        font-size: 11.2px;
+      }
+      .struk-details {
+        font-size: 11.8px;
+      }
+      .struk-label {
+        width: 114px;
+      }
+    }
+
+    /* ==========================================================================
+       3. ATURAN CETAK / SIMPAN PDF (@media print - HANYA MENCETAK KARTU RESI)
+       ========================================================================== */
+    @media print {
+      @page {
+        margin: 8mm;
+        size: auto;
+      }
+
+      body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .print-container {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .print-grid {
+        display: block !important;
+      }
+
+      .receipt-wrapper {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .receipt-card {
+        width: 410px !important;
+        max-width: 410px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        margin: 0 auto !important;
+      }
+
+      .receipt-body {
+        padding: 6px 26px 28px 26px !important;
+      }
+
+      .struk-details {
+        font-size: 12.5px !important;
+      }
+
+      .struk-label {
+        width: 126px !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ========================================================================
+       HEADER APLIKASI (Tersembunyi saat print)
+       ======================================================================== -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#0a3670] flex items-center justify-center text-white shadow-sm shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">Generator Resi Token Listrik PLN</h1>
+          <p class="text-xs text-slate-500">SMAN 1 Sekatak &bull; Terintegrasi Google Spreadsheet &amp; GitHub Pages</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <span id="header-conn-badge" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+          <span id="header-conn-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span id="header-conn-text">Sheets: Belum Dikonfigurasi</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       KONTEN UTAMA 2 KOLOM (KIRI: KONTROL & SHEETS | KANAN: PRATINJAU RESI)
+       ======================================================================== -->
+  <main class="print-container flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div class="print-grid grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- ====================================================================
+           KOLOM KIRI: FORM INPUT, KONEKSI GOOGLE SHEETS & RIWAYAT (no-print)
+           ==================================================================== -->
+      <div class="no-print lg:col-span-7 space-y-6">
+
+        <!-- KARTU 1: FORM INPUT & KONTROL LOKAL RESI -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-6">
+
+          <!-- Pilih 3 Preset Tab Resi -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+              1. Pilih Jenis Resi Token
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5" role="tablist" aria-label="Jenis Resi Token">
+              <button
+                type="button"
+                id="tab-sma"
+                data-preset="sma"
+                onclick="switchPreset('sma')"
+                class="preset-tab flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all cursor-pointer"
+              >
+                <span>1. SMA</span>
+              </button>
+              <button
+                type="button"
+                id="tab-lab"
+                data-preset="lab"
+                onclick="switchPreset('lab')"
+                class="preset-tab flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all cursor-pointer"
+              >
+                <span>2. Lab</span>
+              </button>
+              <button
+                type="button"
+                id="tab-pertemuan"
+                data-preset="pertemuan"
+                onclick="switchPreset('pertemuan')"
+                class="preset-tab flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all cursor-pointer"
+              >
+                <span>3. Ruang Pertemuan</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Ringkasan Data Tetap Meteran Terpilih -->
+          <div class="bg-slate-50 border border-slate-200/90 rounded-xl p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Data Tetap Meteran Aktif</span>
+              <span id="badge-order-id" class="text-xs font-mono font-semibold text-[#0a3670] bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-md">
+                Order ID #AAARTHUL5
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4 text-xs text-slate-700">
+              <div><span class="text-slate-500">Nama Pelanggan:</span> <strong id="info-nama" class="text-slate-900">SMAN 1 SEKATAK</strong></div>
+              <div><span class="text-slate-500">No. Meter / IDPEL:</span> <strong id="info-meter" class="font-mono text-slate-900">32100230112</strong></div>
+              <div><span class="text-slate-500">PBJT-TL:</span> <strong id="info-pbjt" class="text-slate-900">Rp0,00</strong></div>
+              <div><span class="text-slate-500">Jml kWh:</span> <strong id="info-kwh" class="text-slate-900">555.6</strong></div>
+            </div>
+          </div>
+
+          <hr class="border-slate-200" />
+
+          <!-- Form Edit Waktu, Order ID, dan Token -->
+          <div class="space-y-4">
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#134e96]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>2. Edit Data Transaksi</span>
+            </h2>
+
+            <!-- Input Hari & Tanggal -->
+            <div>
+              <label for="input-date-picker" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                Hari dan Tanggal Transaksi
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                <div class="sm:col-span-5">
+                  <input
+                    type="date"
+                    id="input-date-picker"
+                    class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#134e96] focus:border-[#134e96] transition"
+                    title="Pilih tanggal dari kalender"
+                  />
+                </div>
+                <div class="sm:col-span-7">
+                  <input
+                    type="text"
+                    id="input-date-text"
+                    placeholder="Contoh: Rabu, 14 Oktober 2026"
+                    class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#134e96] focus:border-[#134e96] transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Jam & Order ID -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <!-- Jam -->
+              <div class="sm:col-span-5">
+                <label for="input-time-picker" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Jam (Otomatis WIB)
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="time"
+                    id="input-time-picker"
+                    class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#134e96] focus:border-[#134e96] transition"
+                  />
+                  <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-2.5 rounded-xl border border-slate-200">WIB</span>
+                </div>
+              </div>
+
+              <!-- Order ID -->
+              <div class="sm:col-span-7">
+                <label for="input-order-id" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Order ID
+                </label>
+                <div class="flex items-stretch gap-2">
+                  <div class="relative flex-1 flex items-center">
+                    <span class="absolute left-3.5 text-sm font-bold text-slate-400 select-none">#</span>
+                    <input
+                      type="text"
+                      id="input-order-id"
+                      autocomplete="off"
+                      maxlength="16"
+                      placeholder="AAARTHUL5"
+                      class="w-full pl-8 pr-3 py-2.5 font-mono text-sm font-semibold uppercase tracking-wide bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134e96] focus:border-[#134e96] transition"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onclick="generateRandomOrderId()"
+                    class="px-3 py-2.5 text-xs font-semibold text-[#0a3670] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer shrink-0"
+                    title="Buat 9 karakter acak"
+                  >
+                    Acak ID
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Nomor Token (20 Digit) -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="input-token" class="block text-sm font-semibold text-slate-700">
+                  Nomor Stroom / Token (20 Digit)
+                </label>
+                <span id="token-counter" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  20 / 20 digit
+                </span>
+              </div>
+              <div class="relative">
+                <input
+                  type="text"
+                  id="input-token"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  maxlength="24"
+                  placeholder="XXXX XXXX XXXX XXXX XXXX"
+                  class="w-full px-4 py-3 pr-20 font-mono text-base font-bold tracking-wider bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134e96] focus:border-[#134e96] transition"
+                />
+                <button
+                  type="button"
+                  onclick="copyTokenToClipboard()"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+                >
+                  Salin
+                </button>
+              </div>
+              <p class="mt-1 text-xs text-slate-500">
+                Otomatis diformat per 4 digit pada <strong class="text-slate-700">STROOM/TOKEN</strong> dan otomatis mengisi 20 digit tanpa spasi pada <strong id="hint-ref-label" class="text-slate-700">NO REF</strong>.
+              </p>
+            </div>
+          </div>
+
+          <hr class="border-slate-200" />
+
+          <!-- Tombol Aksi Utama (Simpan Spreadsheet, PNG, Print, Reset) -->
+          <div class="space-y-3">
+            <!-- Tombol Utama Simpan ke Spreadsheet -->
+            <button
+              type="button"
+              id="btn-save-sheets"
+              onclick="saveToSpreadsheet()"
+              class="w-full inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] shadow-sm transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <svg id="icon-save-sheets" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <svg id="spinner-save-sheets" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span id="text-save-sheets">Simpan ke Spreadsheet</span>
+            </button>
+
+            <!-- Baris Tombol Lokal -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <button
+                type="button"
+                id="btn-download-png"
+                onclick="downloadReceiptPNG()"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#0a3670] hover:bg-[#134e96] active:scale-[0.99] shadow-sm transition cursor-pointer"
+              >
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Download Gambar (PNG)</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="printReceipt()"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 bg-white border border-slate-300 hover:bg-slate-50 active:scale-[0.99] shadow-sm transition cursor-pointer"
+              >
+                <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>Cetak / Simpan PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="resetCurrentPreset()"
+                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 active:scale-[0.99] transition cursor-pointer"
+              >
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Reset Data Awal</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- KARTU 2: KONFIGURASI KONEKSI GOOGLE SPREADSHEET -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-sm font-bold text-slate-900">Koneksi Google Spreadsheet</h2>
+                <p class="text-xs text-slate-500">Hubungkan ke Google Apps Script Web App</p>
+              </div>
+            </div>
+
+            <span id="panel-conn-badge" class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 self-start sm:self-auto">
+              <span id="panel-conn-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span id="panel-conn-text">Belum Dikonfigurasi</span>
+            </span>
+          </div>
+
+          <div>
+            <label for="input-gas-url" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              URL Web App Google Apps Script
+            </label>
+            <input
+              type="url"
+              id="input-gas-url"
+              placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+              class="w-full px-3.5 py-2.5 text-xs sm:text-sm font-mono bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#134e96] focus:border-[#134e96] transition"
+            />
+            <p class="mt-1 text-[11px] text-slate-500">
+              Otomatis tersimpan di browser (<code class="bg-slate-100 px-1 rounded">localStorage</code>) atau dapat dikirim lewat parameter URL <code class="bg-slate-100 px-1 rounded">?gas_url=...</code>.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              id="btn-test-conn"
+              onclick="testSpreadsheetConnection()"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#134e96] hover:bg-[#0a3670] transition cursor-pointer"
+            >
+              <svg id="icon-test-conn" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <svg id="spinner-test-conn" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span>Tes Koneksi</span>
+            </button>
+
+            <button
+              type="button"
+              onclick="openGasModal()"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <span>Lihat Kode Apps Script</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- KARTU 3: RIWAYAT TRANSAKSI DI SPREADSHEET -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">Riwayat Transaksi di Spreadsheet</h2>
+              <p class="text-xs text-slate-500">Klik "Muat ke Resi" untuk mencetak ulang atau mengunduh PNG</p>
+            </div>
+            <button
+              type="button"
+              id="btn-load-history"
+              onclick="loadSpreadsheetHistory()"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#0a3670] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+            >
+              <svg id="icon-load-history" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <svg id="spinner-load-history" class="hidden w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span>Muat Riwayat</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                  <th class="py-2.5 px-3">Tanggal / Jam</th>
+                  <th class="py-2.5 px-3">Jenis</th>
+                  <th class="py-2.5 px-3">Order ID</th>
+                  <th class="py-2.5 px-3">Token</th>
+                  <th class="py-2.5 px-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body" class="divide-y divide-slate-100 text-slate-700">
+                <tr>
+                  <td colspan="5" class="py-6 px-4 text-center text-slate-400">
+                    Belum ada data dimuat. Klik tombol <strong>Muat Riwayat</strong> setelah menghubungkan URL Apps Script.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ====================================================================
+           KOLOM KANAN: PRATINJAU RESI REAL-TIME (Area Cetak & Export PNG)
+           ==================================================================== -->
+      <section id="preview-section" class="lg:col-span-5 flex flex-col items-center lg:sticky lg:top-20">
+        <div class="no-print w-full max-w-[410px] flex items-center justify-between mb-2.5 px-1">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Pratinjau Resi (410px)</span>
+          <span id="preview-preset-label" class="text-xs font-semibold text-[#0a3670]">Jenis: 1. SMA</span>
+        </div>
+
+        <!-- KARTU RESI UTAMA -->
+        <div class="receipt-wrapper">
+          <article id="receipt-card" class="receipt-card" aria-label="Struk Pembelian Listrik Prabayar">
+            <!-- Banner SVG Poligon Geometris Biru Berlapis Miring dari Kiri Atas ke Kanan Atas -->
+            <div class="receipt-banner" aria-hidden="true">
+              <svg viewBox="0 0 410 64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Lapisan dasar biru tua melandai dari kiri atas ke kanan atas/bawah -->
+                <polygon points="0,0 410,0 410,64 268,21 0,3" fill="#0a3670" />
+                <!-- Faset poligon biru sedang kiri-tengah -->
+                <polygon points="0,0 264,0 268,21 132,10 0,2" fill="#134e96" />
+                <!-- Faset biru terang kanan-tengah -->
+                <polygon points="192,0 410,0 410,53 272,18" fill="#1d64b8" />
+                <!-- Faset aksen biru cerah pojok kanan atas -->
+                <polygon points="256,0 410,0 410,40 310,11" fill="#2b7ad6" />
+              </svg>
+            </div>
+
+            <!-- Konten Resi -->
+            <div class="receipt-body">
+              <!-- Nama Akun Kiri Atas -->
+              <p class="tx-name">Nur Azizah</p>
+
+              <!-- Baris Tanggal & Order ID Sejajar Kiri-Kanan -->
+              <div class="tx-meta-row">
+                <span id="rcp-datetime" class="tx-meta-left">Rabu, 14 Oktober 2026, 06:12 WIB</span>
+                <span id="rcp-order-id" class="tx-meta-right">Order ID #AAARTHUL5</span>
+              </div>
+
+              <!-- Baris Status: Ikon Centang Hijau (#16a34a) + Transaksi Berhasil -->
+              <div class="tx-status">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="10" cy="10" r="9" fill="#16a34a" />
+                  <path d="M6 10.3L8.7 13L14.2 7.5" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Transaksi Berhasil</span>
+              </div>
+
+              <!-- Garis Pemisah Horizontal Putus-putus -->
+              <hr class="receipt-divider" />
+
+              <!-- Baris Produk (Kiri-Kanan) -->
+              <div class="summary-row">
+                <span id="rcp-summary-item">PLN 500.000 - 32100230112</span>
+                <span>Rp525.000</span>
+              </div>
+
+              <!-- Garis Pemisah Horizontal Putus-putus -->
+              <hr class="receipt-divider" />
+
+              <!-- Baris Total (Kiri-Kanan, Bold) -->
+              <div class="summary-total">
+                <span>Total</span>
+                <span>Rp525.000</span>
+              </div>
+
+              <!-- Judul Struk -->
+              <h2 class="struk-title">STRUK PEMBELIAN LISTRIK PRABAYAR</h2>
+
+              <!-- Daftar Rincian Struk PLN -->
+              <div class="struk-details">
+                <div class="struk-row">
+                  <span class="struk-label">NO. METER</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-no-meter" class="struk-value">32100230112</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">IDPEL</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-idpel" class="struk-value">32100230112</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">NAMA</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-nama" class="struk-value">SMAN 1 SEKATAK</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">TARIF/DAYA</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-tarif" class="struk-value">S1 /000005500VA</span>
+                </div>
+                <div class="struk-row">
+                  <span id="rcp-ref-label" class="struk-label">NO REF</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-ref-value" class="struk-value">44595388855667143196</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">RP BAYAR</span>
+                  <span class="struk-colon">:</span>
+                  <span class="struk-value">Rp525.000</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">MATERAI</span>
+                  <span class="struk-colon">:</span>
+                  <span class="struk-value">Rp0,00</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">PPn</span>
+                  <span class="struk-colon">:</span>
+                  <span class="struk-value">Rp0,00</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">PBJT-TL</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-pbjt" class="struk-value">Rp0,00</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">ANGSURAN</span>
+                  <span class="struk-colon">:</span>
+                  <span class="struk-value">Rp0,00</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">RP STROOM/TOKEN</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-rp-stroom" class="struk-value">RP500.000,00</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">JML KWH</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-kwh" class="struk-value">555.6</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">STROOM/TOKEN</span>
+                  <span class="struk-colon">:</span>
+                  <span id="rcp-token" class="struk-value struk-token-bold">4459 5388 8556 6714 3196</span>
+                </div>
+                <div class="struk-row">
+                  <span class="struk-label">ADMIN BANK</span>
+                  <span class="struk-colon">:</span>
+                  <span class="struk-value">Rp3.000</span>
+                </div>
+              </div>
+
+              <!-- Footer Struk -->
+              <footer class="struk-footer">
+                <p>Informasi Hubungi Call Center 123</p>
+                <p>Atau</p>
+                <p>hubungi PLN Terdekat Download PLN Mobile</p>
+                <p class="footer-legal">Transaksi telah berhasil dilakukan dan Konfirmasi Transaksi ini dapat dijadikan bukti pembayaran yang sah.</p>
+              </footer>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       MODAL KODE GOOGLE APPS SCRIPT (Code.gs)
+       ======================================================================== -->
+  <div
+    id="gas-modal"
+    class="no-print hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gas-modal-title"
+  >
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <!-- Header Modal -->
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div>
+          <h3 id="gas-modal-title" class="text-base font-bold text-slate-900">Kode Google Apps Script (Code.gs)</h3>
+          <p class="text-xs text-slate-500">Pasang di Google Sheets &rarr; Ekstensi &rarr; Apps Script &rarr; Terapkan sebagai Aplikasi Web</p>
+        </div>
+        <button
+          type="button"
+          onclick="closeGasModal()"
+          class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition cursor-pointer"
+          aria-label="Tutup modal"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Langkah Pemasangan Singkat -->
+      <div class="px-5 py-3 bg-blue-50/70 border-b border-blue-100 text-xs text-slate-700 space-y-1">
+        <p class="font-bold text-[#0a3670]">Panduan Singkat Pemasangan:</p>
+        <ol class="list-decimal list-inside space-y-0.5 text-slate-600">
+          <li>Buka Google Spreadsheet baru, lalu klik <strong>Ekstensi &rarr; Apps Script</strong>.</li>
+          <li>Hapus seluruh isi editor, salin &amp; tempel kode di bawah ini, lalu klik <strong>Simpan (Ctrl+S)</strong>.</li>
+          <li>Klik <strong>Terapkan &rarr; Deployment baru &rarr; Jenis: Aplikasi web</strong>.</li>
+          <li>Pilih <em>Jalankan sebagai:</em> <strong>Saya</strong> dan <em>Yang memiliki akses:</em> <strong>Siapa saja</strong>, lalu salin URL Web App-nya.</li>
+        </ol>
+      </div>
+
+      <!-- Area Kode -->
+      <div class="p-4 flex-1 overflow-y-auto bg-slate-950">
+        <textarea
+          id="gas-code-textarea"
+          readonly
+          rows="16"
+          class="w-full h-full bg-transparent text-emerald-300 font-mono text-xs leading-relaxed focus:outline-none resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="px-5 py-3.5 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onclick="copyGasCodeToClipboard()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0a3670] hover:bg-[#134e96] transition cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+          </svg>
+          <span>Salin Kode Apps Script</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="closeGasModal()"
+          class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 transition cursor-pointer"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFIKASI TOAST (Non-blocking pengganti alert()) -->
+  <div
+    id="toast-container"
+    class="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"
+    aria-live="polite"
+  ></div>
+
+  <!-- ========================================================================
+       4. LOGIKA JAVASCRIPT LENGKAP
+       ======================================================================== -->
+  <script>
+    const STORAGE_KEY_GAS_URL = 'pln_gas_webapp_url';
+
+    /**
+     * 3 Preset Tab Resi dengan State Masing-Masing Terpisah
+     */
+    const PRESETS = {
+      sma: {
+        id: 'sma',
+        tabLabel: '1. SMA',
+        jenisResi: 'SMA',
+        shortName: 'SMA',
+        orderId: 'AAARTHUL5',
+        noMeter: '32100230112',
+        idpel: '32100230112',
+        nama: 'SMAN 1 SEKATAK',
+        tarifDaya: 'S1 /000005500VA',
+        labelRef: 'NO REF',
+        pbjtTl: 'Rp0,00',
+        rpStroom: 'RP500.000,00',
+        jmlKwh: '555.6',
+        defaultDateIso: '2026-10-14',
+        defaultDateText: 'Rabu, 14 Oktober 2026',
+        defaultTime: '06:12',
+        defaultToken: '4459 5388 8556 6714 3196'
+      },
+      lab: {
+        id: 'lab',
+        tabLabel: '2. Lab',
+        jenisResi: 'Lab',
+        shortName: 'Lab',
+        orderId: 'T7LJY8JWG',
+        noMeter: '32208965650',
+        idpel: '32208965650',
+        nama: 'RUANG LAB SMA SEKATAK',
+        tarifDaya: 'S1 /000005500VA',
+        labelRef: 'NO REF',
+        pbjtTl: 'Rp45.455,00',
+        rpStroom: 'RP500.000',
+        jmlKwh: '505.1',
+        defaultDateIso: '2026-10-15',
+        defaultDateText: 'Kamis, 15 Oktober 2026',
+        defaultTime: '19:08',
+        defaultToken: '3561 6231 5004 5737 7002'
+      },
+      pertemuan: {
+        id: 'pertemuan',
+        tabLabel: '3. Ruang Pertemuan',
+        jenisResi: 'Ruang Pertemuan',
+        shortName: 'Ruang_Pertemuan',
+        orderId: '8AALDAXMX',
+        noMeter: '45137454356',
+        idpel: '45137454356',
+        nama: 'R.PERTEMUAN SMA 1 SEKATAK',
+        tarifDaya: 'S1 /000005500VA',
+        labelRef: 'NO REFF',
+        pbjtTl: 'Rp0,00',
+        rpStroom: 'RP500.000',
+        jmlKwh: '555.6',
+        defaultDateIso: '2026-10-15',
+        defaultDateText: 'Kamis, 15 Oktober 2026',
+        defaultTime: '19:08',
+        defaultToken: '6262 6975 4066 0262 5324'
+      }
+    };
+
+    const HARI_INDONESIA = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const BULAN_INDONESIA = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    /**
+     * Kode Google Apps Script (Code.gs) siap salin untuk pengguna
+     */
+    const GAS_CODE_TEMPLATE = `/**
+ * Google Apps Script (Code.gs) untuk Generator Resi Token Listrik PLN
+ * Mendukung GET (?action=ping & ?action=list) dan POST (action: 'create')
+ */
+
+const SHEET_NAME = 'Riwayat_Token_PLN';
+
+function getOrCreateSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    const headers = [
+      'Waktu Input',
+      'Jenis Resi',
+      'Nama Pelanggan',
+      'No. Meter / IDPEL',
+      'Hari & Tanggal',
+      'Jam (WIB)',
+      'Order ID',
+      'Nomor Token',
+      'No. Ref',
+      'Nominal Bayar',
+      'Jumlah kWh'
+    ];
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length)
+      .setFontWeight('bold')
+      .setBackground('#0a3670')
+      .setFontColor('#ffffff');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function createJsonResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  try {
+    const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'ping';
+
+    if (action === 'ping') {
+      const sheet = getOrCreateSheet();
+      return createJsonResponse({
+        status: 'success',
+        message: 'Terhubung ke Google Spreadsheet!',
+        sheetName: sheet.getName(),
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (action === 'list') {
+      const sheet = getOrCreateSheet();
+      const lastRow = sheet.getLastRow();
+      if (lastRow <= 1) {
+        return createJsonResponse({ status: 'success', data: [] });
+      }
+
+      const numRows = lastRow - 1;
+      const values = sheet.getRange(2, 1, numRows, 11).getDisplayValues();
+      const records = values.map((row, idx) => ({
+        rowNumber: idx + 2,
+        waktuInput: row[0],
+        jenisResi: row[1],
+        namaPelanggan: row[2],
+        noMeter: row[3],
+        hariTanggal: row[4],
+        jamWib: row[5],
+        orderId: row[6],
+        nomorToken: row[7],
+        noRef: row[8],
+        nominalBayar: row[9],
+        jumlahKwh: row[10]
+      })).reverse();
+
+      return createJsonResponse({
+        status: 'success',
+        data: records.slice(0, 50)
+      });
+    }
+
+    return createJsonResponse({
+      status: 'error',
+      message: 'Parameter action tidak dikenali: ' + action
+    });
+  } catch (err) {
+    return createJsonResponse({
+      status: 'error',
+      message: err.toString()
+    });
+  }
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return createJsonResponse({
+        status: 'error',
+        message: 'Payload POST kosong.'
+      });
+    }
+
+    const payload = JSON.parse(e.postData.contents);
+    if (payload.action === 'create') {
+      const sheet = getOrCreateSheet();
+      const waktuInput = Utilities.formatDate(
+        new Date(),
+        Session.getScriptTimeZone() || 'Asia/Makassar',
+        'yyyy-MM-dd HH:mm:ss'
+      );
+
+      // Awalan apostrof (') menjaga agar 20 digit No. Ref & No. Meter tersimpan sebagai teks utuh
+      const newRow = [
+        waktuInput,
+        String(payload.jenisResi || ''),
+        String(payload.namaPelanggan || ''),
+        "'" + String(payload.noMeter || ''),
+        String(payload.hariTanggal || ''),
+        String(payload.jamWib || ''),
+        String(payload.orderId || ''),
+        String(payload.nomorToken || ''),
+        "'" + String(payload.noRef || ''),
+        String(payload.nominalBayar || 'Rp525.000'),
+        String(payload.jumlahKwh || '')
+      ];
+
+      sheet.appendRow(newRow);
+
+      return createJsonResponse({
+        status: 'success',
+        message: 'Data resi berhasil disimpan ke Spreadsheet!',
+        orderId: payload.orderId
+      });
+    }
+
+    return createJsonResponse({
+      status: 'error',
+      message: 'Aksi POST tidak valid.'
+    });
+  } catch (err) {
+    return createJsonResponse({
+      status: 'error',
+      message: 'Gagal memproses data: ' + err.toString()
+    });
+  }
+}`;
+
+    // State terpisah untuk masing-masing preset tab + riwayat spreadsheet
+    const appState = {
+      activePreset: 'sma',
+      historyRecords: [],
+      data: {
+        sma: {
+          dateIso: PRESETS.sma.defaultDateIso,
+          dateText: PRESETS.sma.defaultDateText,
+          time: PRESETS.sma.defaultTime,
+          orderId: PRESETS.sma.orderId,
+          tokenSpaced: PRESETS.sma.defaultToken
+        },
+        lab: {
+          dateIso: PRESETS.lab.defaultDateIso,
+          dateText: PRESETS.lab.defaultDateText,
+          time: PRESETS.lab.defaultTime,
+          orderId: PRESETS.lab.orderId,
+          tokenSpaced: PRESETS.lab.defaultToken
+        },
+        pertemuan: {
+          dateIso: PRESETS.pertemuan.defaultDateIso,
+          dateText: PRESETS.pertemuan.defaultDateText,
+          time: PRESETS.pertemuan.defaultTime,
+          orderId: PRESETS.pertemuan.orderId,
+          tokenSpaced: PRESETS.pertemuan.defaultToken
+        }
+      }
+    };
+
+    /**
+     * Menampilkan notifikasi toast non-blocking
+     */
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgClass = type === 'error'
+        ? 'bg-rose-700 text-white'
+        : type === 'warning'
+          ? 'bg-amber-700 text-white'
+          : 'bg-slate-900 text-white';
+
+      const dotClass = type === 'error'
+        ? 'bg-rose-300'
+        : type === 'warning'
+          ? 'bg-amber-300'
+          : 'bg-emerald-400';
+
+      toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2.5 transition-all duration-300 opacity-0 translate-y-2`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full shrink-0 ${dotClass}"></span>
+        <span class="leading-snug">${escapeHtml(message)}</span>
+      `;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    /**
+     * Sanitasi teks HTML sederhana untuk tabel riwayat
+     */
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /**
+     * Mengonversi tanggal ISO (YYYY-MM-DD) menjadi format "Hari, DD Bulan YYYY"
+     */
+    function formatIsoToIndonesianDate(isoString) {
+      try {
+        if (!isoString || !/^\d{4}-\d{2}-\d{2}$/.test(isoString)) return '';
+        const [year, month, day] = isoString.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        if (isNaN(dateObj.getTime())) return '';
+        const namaHari = HARI_INDONESIA[dateObj.getDay()];
+        const namaBulan = BULAN_INDONESIA[dateObj.getMonth()];
+        return `${namaHari}, ${day} ${namaBulan} ${year}`;
+      } catch (err) {
+        return '';
+      }
+    }
+
+    /**
+     * Mengonversi teks tanggal Indonesia kembali ke YYYY-MM-DD untuk input date
+     */
+    function parseIndonesianDateToIso(text) {
+      try {
+        const cleaned = String(text || '').replace(/^[A-Za-z]+,\s*/, '').trim();
+        const parts = cleaned.split(/\s+/);
+        if (parts.length !== 3) return null;
+        const day = parseInt(parts[0], 10);
+        const monthIndex = BULAN_INDONESIA.findIndex(
+          (b) => b.toLowerCase() === parts[1].toLowerCase()
+        );
+        const year = parseInt(parts[2], 10);
+        if (isNaN(day) || monthIndex === -1 || isNaN(year) || year < 1900 || year > 2100) {
+          return null;
+        }
+        const mm = String(monthIndex + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        return `${year}-${mm}-${dd}`;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    /**
+     * Memformat angka maksimal 20 digit menjadi grup 4 digit dipisah spasi
+     */
+    function formatTokenDigits(rawInput) {
+      const digitsOnly = String(rawInput || '').replace(/\D/g, '').slice(0, 20);
+      const groups = digitsOnly.match(/.{1,4}/g);
+      return {
+        digitsOnly,
+        spaced: groups ? groups.join(' ') : ''
+      };
+    }
+
+    /**
+     * Memperbarui badge penghitung digit token
+     */
+    function updateTokenCounter(digitCount) {
+      const counterEl = document.getElementById('token-counter');
+      counterEl.textContent = `${digitCount} / 20 digit`;
+      if (digitCount === 20) {
+        counterEl.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+      } else {
+        counterEl.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800';
+      }
+    }
+
+    /**
+     * Berpindah antar 3 tab preset resi (SMA, Lab, Ruang Pertemuan)
+     */
+    function switchPreset(presetKey) {
+      if (!PRESETS[presetKey]) return;
+      appState.activePreset = presetKey;
+      renderAll();
+    }
+
+    /**
+     * Merender ulang tampilan tab aktif, form input, dan seluruh pratinjau kartu resi
+     */
+    function renderAll() {
+      const key = appState.activePreset;
+      const preset = PRESETS[key];
+      const current = appState.data[key];
+
+      // 1. Update gaya 3 tombol tab
+      document.querySelectorAll('.preset-tab').forEach((btn) => {
+        const isSelected = btn.getAttribute('data-preset') === key;
+        if (isSelected) {
+          btn.className = 'preset-tab flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border-2 border-[#0a3670] bg-[#0a3670] text-white shadow-sm transition-all cursor-pointer';
+        } else {
+          btn.className = 'preset-tab flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all cursor-pointer';
+        }
+      });
+
+      // 2. Update informasi data tetap meteran
+      const activeOrderId = (current.orderId || preset.orderId).trim();
+      document.getElementById('badge-order-id').textContent = `Order ID #${activeOrderId}`;
+      document.getElementById('info-nama').textContent = preset.nama;
+      document.getElementById('info-meter').textContent = preset.noMeter;
+      document.getElementById('info-pbjt').textContent = preset.pbjtTl;
+      document.getElementById('info-kwh').textContent = preset.jmlKwh;
+      document.getElementById('hint-ref-label').textContent = preset.labelRef;
+      document.getElementById('preview-preset-label').textContent = `Jenis: ${preset.tabLabel}`;
+
+      // 3. Sinkronkan nilai input form dengan state tab aktif
+      document.getElementById('input-date-picker').value = current.dateIso || '';
+      document.getElementById('input-date-text').value = current.dateText;
+      document.getElementById('input-time-picker').value = /^\d{2}:\d{2}$/.test(current.time) ? current.time : '';
+      document.getElementById('input-order-id').value = current.orderId;
+      document.getElementById('input-token').value = current.tokenSpaced;
+
+      const { digitsOnly, spaced } = formatTokenDigits(current.tokenSpaced);
+      updateTokenCounter(digitsOnly.length);
+
+      // 4. Perbarui seluruh elemen pada Kartu Resi
+      const displayTime = (current.time || '00:00').trim();
+      const displayDate = (current.dateText || '').trim();
+      document.getElementById('rcp-datetime').textContent = `${displayDate}, ${displayTime} WIB`;
+      document.getElementById('rcp-order-id').textContent = `Order ID #${activeOrderId}`;
+      document.getElementById('rcp-summary-item').textContent = `PLN 500.000 - ${preset.noMeter}`;
+
+      document.getElementById('rcp-no-meter').textContent = preset.noMeter;
+      document.getElementById('rcp-idpel').textContent = preset.idpel;
+      document.getElementById('rcp-nama').textContent = preset.nama;
+      document.getElementById('rcp-tarif').textContent = preset.tarifDaya;
+      document.getElementById('rcp-ref-label').textContent = preset.labelRef;
+      document.getElementById('rcp-ref-value').textContent = digitsOnly;
+      document.getElementById('rcp-pbjt').textContent = preset.pbjtTl;
+      document.getElementById('rcp-rp-stroom').textContent = preset.rpStroom;
+      document.getElementById('rcp-kwh').textContent = preset.jmlKwh;
+      document.getElementById('rcp-token').textContent = spaced;
+    }
+
+    /**
+     * Membuat Order ID 9 karakter alfanumerik acak
+     */
+    function generateRandomOrderId() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 9; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const key = appState.activePreset;
+      appState.data[key].orderId = result;
+      renderAll();
+      showToast(`Order ID acak dibuat: #${result}`);
+    }
+
+    /**
+     * Mengembalikan input pada tab aktif ke data awal dokumen
+     */
+    function resetCurrentPreset() {
+      const key = appState.activePreset;
+      const preset = PRESETS[key];
+      appState.data[key] = {
+        dateIso: preset.defaultDateIso,
+        dateText: preset.defaultDateText,
+        time: preset.defaultTime,
+        orderId: preset.orderId,
+        tokenSpaced: preset.defaultToken
+      };
+      renderAll();
+      showToast(`Data resi ${preset.tabLabel} dikembalikan ke data awal.`);
+    }
+
+    /**
+     * Menyalin nomor token ke clipboard (menggunakan execCommand agar kompatibel iFrame)
+     */
+    function copyTokenToClipboard() {
+      const tokenInput = document.getElementById('input-token');
+      tokenInput.select();
+      tokenInput.setSelectionRange(0, 99999);
+      try {
+        const ok = document.execCommand('copy');
+        if (ok) {
+          showToast('Nomor token berhasil disalin ke clipboard.');
+        } else {
+          showToast('Gagal menyalin nomor token.', 'error');
+        }
+      } catch (err) {
+        showToast('Browser tidak mendukung penyalinan otomatis.', 'error');
+      }
+      window.getSelection().removeAllRanges();
+    }
+
+    /**
+     * Mencetak / Simpan PDF via dialog print browser
+     */
+    function printReceipt() {
+      try {
+        window.print();
+      } catch (err) {
+        showToast('Gagal membuka dialog cetak.', 'error');
+      }
+    }
+
+    /**
+     * Mengunduh Kartu Resi sebagai Gambar PNG Resolusi Tinggi (html2canvas scale: 3)
+     */
+    async function downloadReceiptPNG() {
+      const receiptEl = document.getElementById('receipt-card');
+      const btn = document.getElementById('btn-download-png');
+
+      if (typeof html2canvas !== 'function') {
+        showToast('Library html2canvas belum siap. Periksa koneksi internet Anda.', 'error');
+        return;
+      }
+
+      const key = appState.activePreset;
+      const preset = PRESETS[key];
+      const current = appState.data[key];
+      const orderId = (current.orderId || preset.orderId).trim();
+      const safeDate = (current.dateIso || 'PLN').replace(/[^0-9-]/g, '');
+      const fileName = `Resi_Token_${preset.shortName}_${orderId}_${safeDate}.png`;
+
+      // Simpan gaya asli kartu resi sebelum capture agar hasil PNG bersih tanpa bayangan
+      const origShadow = receiptEl.style.boxShadow;
+      const origBorder = receiptEl.style.border;
+      const origRadius = receiptEl.style.borderRadius;
+
+      try {
+        btn.disabled = true;
+        receiptEl.style.boxShadow = 'none';
+        receiptEl.style.border = 'none';
+        receiptEl.style.borderRadius = '0';
+
+        const canvas = await html2canvas(receiptEl, {
+          scale: 3,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false
+        });
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast(`Gambar PNG berhasil diunduh (${fileName}).`);
+      } catch (err) {
+        console.error('html2canvas error:', err);
+        showToast('Gagal mengekspor gambar PNG.', 'error');
+      } finally {
+        receiptEl.style.boxShadow = origShadow;
+        receiptEl.style.border = origBorder;
+        receiptEl.style.borderRadius = origRadius;
+        btn.disabled = false;
+      }
+    }
+
+    /* ========================================================================
+       5. INTEGRASI GOOGLE SPREADSHEET (GOOGLE APPS SCRIPT WEB APP)
+       ======================================================================== */
+
+    /**
+     * Mengambil URL Web App dari input atau localStorage
+     */
+    function getGasWebAppUrl() {
+      const inputEl = document.getElementById('input-gas-url');
+      const url = (inputEl ? inputEl.value : '').trim();
+      if (url) {
+        localStorage.setItem(STORAGE_KEY_GAS_URL, url);
+      }
+      return url;
+    }
+
+    /**
+     * Memperbarui indikator visual status koneksi di Header dan Panel Konfigurasi
+     */
+    function updateConnectionStatusUI(status, customLabel = '') {
+      const headerBadge = document.getElementById('header-conn-badge');
+      const headerDot = document.getElementById('header-conn-dot');
+      const headerText = document.getElementById('header-conn-text');
+
+      const panelBadge = document.getElementById('panel-conn-badge');
+      const panelDot = document.getElementById('panel-conn-dot');
+      const panelText = document.getElementById('panel-conn-text');
+
+      if (status === 'connected') {
+        const label = customLabel || 'Terhubung';
+        headerBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200';
+        headerDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        headerText.textContent = `Sheets: ${label}`;
+
+        panelBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 self-start sm:self-auto';
+        panelDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        panelText.textContent = label;
+      } else if (status === 'error') {
+        const label = customLabel || 'Gagal Terhubung';
+        headerBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-50 text-rose-800 border border-rose-200';
+        headerDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        headerText.textContent = `Sheets: ${label}`;
+
+        panelBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 self-start sm:self-auto';
+        panelDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        panelText.textContent = label;
+      } else if (status === 'configured') {
+        const label = customLabel || 'URL Tersimpan';
+        headerBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200';
+        headerDot.className = 'w-2 h-2 rounded-full bg-blue-500';
+        headerText.textContent = `Sheets: ${label}`;
+
+        panelBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 self-start sm:self-auto';
+        panelDot.className = 'w-2 h-2 rounded-full bg-blue-500';
+        panelText.textContent = label;
+      } else {
+        const label = customLabel || 'Belum Dikonfigurasi';
+        headerBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200';
+        headerDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        headerText.textContent = `Sheets: ${label}`;
+
+        panelBadge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 self-start sm:self-auto';
+        panelDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        panelText.textContent = label;
+      }
+    }
+
+    /**
+     * Membangun URL dengan query parameter secara aman
+     */
+    function buildGasQueryUrl(baseUrl, paramsObj) {
+      const urlObj = new URL(baseUrl);
+      Object.entries(paramsObj).forEach(([k, v]) => {
+        urlObj.searchParams.set(k, v);
+      });
+      return urlObj.toString();
+    }
+
+    /**
+     * Menguji koneksi ke Google Apps Script Web App (?action=ping)
+     */
+    async function testSpreadsheetConnection(silent = false) {
+      const gasUrl = getGasWebAppUrl();
+      if (!gasUrl) {
+        updateConnectionStatusUI('unconfigured');
+        if (!silent) showToast('Masukkan URL Web App Google Apps Script terlebih dahulu.', 'warning');
+        return false;
+      }
+
+      const btn = document.getElementById('btn-test-conn');
+      const icon = document.getElementById('icon-test-conn');
+      const spinner = document.getElementById('spinner-test-conn');
+
+      try {
+        btn.disabled = true;
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+
+        const pingUrl = buildGasQueryUrl(gasUrl, { action: 'ping' });
+        const response = await fetch(pingUrl, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result && result.status === 'success') {
+          updateConnectionStatusUI('connected', 'Terhubung');
+          if (!silent) {
+            showToast(result.message || 'Koneksi ke Google Spreadsheet berhasil!');
+          }
+          return true;
+        } else {
+          throw new Error((result && result.message) || 'Respon tidak valid dari Apps Script');
+        }
+      } catch (err) {
+        console.error('Ping GAS error:', err);
+        updateConnectionStatusUI('error', 'Gagal Terhubung');
+        if (!silent) {
+          showToast(`Tes koneksi gagal: ${err.message}`, 'error');
+        }
+        return false;
+      } finally {
+        btn.disabled = false;
+        icon.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Menyimpan transaksi resi aktif ke Google Spreadsheet via POST text/plain;charset=utf-8
+     */
+    async function saveToSpreadsheet() {
+      const gasUrl = getGasWebAppUrl();
+      if (!gasUrl) {
+        showToast('URL Web App Google Apps Script belum diisi pada panel Koneksi Google Spreadsheet.', 'warning');
+        document.getElementById('input-gas-url').focus();
+        return;
+      }
+
+      const key = appState.activePreset;
+      const preset = PRESETS[key];
+      const current = appState.data[key];
+      const { digitsOnly, spaced } = formatTokenDigits(current.tokenSpaced);
+
+      if (digitsOnly.length !== 20) {
+        showToast('Nomor token harus lengkap 20 digit sebelum disimpan ke Spreadsheet.', 'warning');
+        document.getElementById('input-token').focus();
+        return;
+      }
+
+      const orderId = (current.orderId || preset.orderId).trim();
+      const hariTanggal = (current.dateText || '').trim();
+      const jamWib = `${(current.time || '00:00').trim()} WIB`;
+
+      const payload = {
+        action: 'create',
+        jenisResi: preset.jenisResi,
+        namaPelanggan: preset.nama,
+        noMeter: preset.noMeter,
+        hariTanggal: hariTanggal,
+        jamWib: jamWib,
+        orderId: orderId,
+        nomorToken: spaced,
+        noRef: digitsOnly,
+        nominalBayar: 'Rp525.000',
+        jumlahKwh: preset.jmlKwh
+      };
+
+      const btn = document.getElementById('btn-save-sheets');
+      const icon = document.getElementById('icon-save-sheets');
+      const spinner = document.getElementById('spinner-save-sheets');
+      const label = document.getElementById('text-save-sheets');
+
+      try {
+        btn.disabled = true;
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        label.textContent = 'Menyimpan ke Spreadsheet...';
+
+        // Menggunakan Content-Type 'text/plain;charset=utf-8' agar bebas blokir CORS preflight di GitHub Pages
+        const response = await fetch(gasUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result && result.status === 'success') {
+          updateConnectionStatusUI('connected', 'Terhubung');
+          showToast(`Berhasil disimpan ke Spreadsheet (Order ID #${orderId})!`);
+          // Muat ulang tabel riwayat secara otomatis agar entri baru langsung tampil
+          loadSpreadsheetHistory(true);
+        } else {
+          throw new Error((result && result.message) || 'Gagal menyimpan data ke Spreadsheet');
+        }
+      } catch (err) {
+        console.error('Save GAS error:', err);
+        showToast(`Gagal menyimpan ke Spreadsheet: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        icon.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        label.textContent = 'Simpan ke Spreadsheet';
+      }
+    }
+
+    /**
+     * Mengambil daftar riwayat transaksi terbaru dari Google Spreadsheet (?action=list)
+     */
+    async function loadSpreadsheetHistory(silent = false) {
+      const gasUrl = getGasWebAppUrl();
+      if (!gasUrl) {
+        if (!silent) {
+          showToast('Masukkan URL Web App Google Apps Script terlebih dahulu.', 'warning');
+          document.getElementById('input-gas-url').focus();
+        }
+        return;
+      }
+
+      const btn = document.getElementById('btn-load-history');
+      const icon = document.getElementById('icon-load-history');
+      const spinner = document.getElementById('spinner-load-history');
+      const tbody = document.getElementById('history-table-body');
+
+      try {
+        btn.disabled = true;
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+
+        const listUrl = buildGasQueryUrl(gasUrl, { action: 'list' });
+        const response = await fetch(listUrl, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result && result.status === 'success') {
+          updateConnectionStatusUI('connected', 'Terhubung');
+          const records = Array.isArray(result.data) ? result.data : [];
+          appState.historyRecords = records;
+          renderHistoryTable(records);
+
+          if (!silent) {
+            showToast(`Berhasil memuat ${records.length} riwayat transaksi dari Spreadsheet.`);
+          }
+        } else {
+          throw new Error((result && result.message) || 'Gagal memuat riwayat dari Spreadsheet');
+        }
+      } catch (err) {
+        console.error('List GAS error:', err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-5 px-4 text-center text-rose-600 font-medium">
+              Gagal memuat riwayat: ${escapeHtml(err.message)}
+            </td>
+          </tr>
+        `;
+        if (!silent) {
+          showToast(`Gagal memuat riwayat: ${err.message}`, 'error');
+        }
+      } finally {
+        btn.disabled = false;
+        icon.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Merender baris tabel Riwayat Transaksi di Spreadsheet
+     */
+    function renderHistoryTable(records) {
+      const tbody = document.getElementById('history-table-body');
+      if (!records || records.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-6 px-4 text-center text-slate-400">
+              Belum ada transaksi tersimpan di Google Spreadsheet.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = records.map((rec, index) => {
+        const jenisRaw = String(rec.jenisResi || 'SMA');
+        const badgeColor = jenisRaw.toLowerCase().includes('lab')
+          ? 'bg-purple-50 text-purple-700 border-purple-200'
+          : jenisRaw.toLowerCase().includes('pertemuan')
+            ? 'bg-amber-50 text-amber-800 border-amber-200'
+            : 'bg-blue-50 text-[#0a3670] border-blue-200';
+
+        const cleanOrderId = String(rec.orderId || '').replace(/^#/, '');
+        const tokenDisplay = String(rec.nomorToken || rec.noRef || '-');
+        const waktuDisplay = `${rec.hariTanggal || '-'}<br><span class="text-[11px] text-slate-400">${escapeHtml(rec.jamWib || '')}</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50/90 transition">
+            <td class="py-2.5 px-3 whitespace-nowrap leading-snug">${waktuDisplay}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <span class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded-md border ${badgeColor}">
+                ${escapeHtml(jenisRaw)}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 font-mono font-semibold text-slate-800 whitespace-nowrap">#${escapeHtml(cleanOrderId)}</td>
+            <td class="py-2.5 px-3 font-mono text-[11px] text-slate-700 whitespace-nowrap">${escapeHtml(tokenDisplay)}</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap">
+              <button
+                type="button"
+                onclick="loadHistoryRecordToReceipt(${index})"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-white bg-[#0a3670] hover:bg-[#134e96] transition cursor-pointer"
+              >
+                Muat ke Resi
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Memuat satu record riwayat dari Spreadsheet ke pratinjau kartu resi
+     */
+    function loadHistoryRecordToReceipt(index) {
+      const rec = appState.historyRecords[index];
+      if (!rec) return;
+
+      const jenisLower = String(rec.jenisResi || '').toLowerCase();
+      let targetKey = 'sma';
+      if (jenisLower.includes('lab')) {
+        targetKey = 'lab';
+      } else if (jenisLower.includes('pertemuan')) {
+        targetKey = 'pertemuan';
+      }
+
+      const rawDateText = String(rec.hariTanggal || PRESETS[targetKey].defaultDateText).trim();
+      const parsedIso = parseIndonesianDateToIso(rawDateText) || PRESETS[targetKey].defaultDateIso;
+      const cleanTime = String(rec.jamWib || '00:00').replace(/\s*WIB\s*/i, '').trim();
+      const cleanOrderId = String(rec.orderId || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 16);
+      const { spaced } = formatTokenDigits(rec.nomorToken || rec.noRef || '');
+
+      appState.activePreset = targetKey;
+      appState.data[targetKey] = {
+        dateIso: parsedIso,
+        dateText: rawDateText,
+        time: cleanTime || '00:00',
+        orderId: cleanOrderId || PRESETS[targetKey].orderId,
+        tokenSpaced: spaced || PRESETS[targetKey].defaultToken
+      };
+
+      renderAll();
+      showToast(`Resi ${PRESETS[targetKey].tabLabel} (#${cleanOrderId}) dimuat ke pratinjau!`);
+
+      // Pada layar mobile/tablet, gulir halus ke pratinjau resi
+      if (window.innerWidth < 1024) {
+        document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    /* ========================================================================
+       6. KONTROL MODAL KODE APPS SCRIPT
+       ======================================================================== */
+    function openGasModal() {
+      const modal = document.getElementById('gas-modal');
+      const textarea = document.getElementById('gas-code-textarea');
+      textarea.value = GAS_CODE_TEMPLATE;
+      modal.classList.remove('hidden');
+    }
+
+    function closeGasModal() {
+      document.getElementById('gas-modal').classList.add('hidden');
+    }
+
+    function copyGasCodeToClipboard() {
+      const textarea = document.getElementById('gas-code-textarea');
+      textarea.select();
+      textarea.setSelectionRange(0, 999999);
+      try {
+        const ok = document.execCommand('copy');
+        if (ok) {
+          showToast('Kode Google Apps Script (Code.gs) berhasil disalin!');
+        } else {
+          showToast('Gagal menyalin kode Apps Script.', 'error');
+        }
+      } catch (err) {
+        showToast('Browser tidak mendukung penyalinan otomatis.', 'error');
+      }
+      window.getSelection().removeAllRanges();
+    }
+
+    /* ========================================================================
+       7. INISIALISASI EVENT LISTENERS & URL PARAMETER SAAT HALAMAN DIMUAT
+       ======================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      const datePicker = document.getElementById('input-date-picker');
+      const dateText = document.getElementById('input-date-text');
+      const timePicker = document.getElementById('input-time-picker');
+      const orderIdInput = document.getElementById('input-order-id');
+      const tokenInput = document.getElementById('input-token');
+      const gasUrlInput = document.getElementById('input-gas-url');
+      const gasModal = document.getElementById('gas-modal');
+
+      // Cek parameter URL '?gas_url=...' atau localStorage 'pln_gas_webapp_url'
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramGasUrl = (urlParams.get('gas_url') || '').trim();
+      if (paramGasUrl) {
+        localStorage.setItem(STORAGE_KEY_GAS_URL, paramGasUrl);
+      }
+
+      const savedGasUrl = (localStorage.getItem(STORAGE_KEY_GAS_URL) || '').trim();
+      if (savedGasUrl) {
+        gasUrlInput.value = savedGasUrl;
+        updateConnectionStatusUI('configured', 'URL Tersimpan');
+        // Uji koneksi & muat riwayat secara otomatis saat halaman dibuka
+        testSpreadsheetConnection(true).then((ok) => {
+          if (ok) loadSpreadsheetHistory(true);
+        });
+      } else {
+        updateConnectionStatusUI('unconfigured', 'Belum Dikonfigurasi');
+      }
+
+      // Simpan otomatis perubahan URL Apps Script ke localStorage
+      gasUrlInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        if (val) {
+          localStorage.setItem(STORAGE_KEY_GAS_URL, val);
+          updateConnectionStatusUI('configured', 'URL Tersimpan');
+        } else {
+          localStorage.removeItem(STORAGE_KEY_GAS_URL);
+          updateConnectionStatusUI('unconfigured', 'Belum Dikonfigurasi');
+        }
+      });
+
+      // Tutup modal saat klik area backdrop atau tekan tombol Escape
+      gasModal.addEventListener('click', (e) => {
+        if (e.target === gasModal) closeGasModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !gasModal.classList.contains('hidden')) {
+          closeGasModal();
+        }
+      });
+
+      // Listener Kalender -> Update teks tanggal Indonesia
+      datePicker.addEventListener('change', (e) => {
+        const key = appState.activePreset;
+        const isoVal = e.target.value;
+        appState.data[key].dateIso = isoVal;
+        const formatted = formatIsoToIndonesianDate(isoVal);
+        if (formatted) {
+          appState.data[key].dateText = formatted;
+        }
+        renderAll();
+      });
+
+      // Listener Teks Tanggal Manual -> Sinkronkan kalender & pratinjau resi
+      dateText.addEventListener('input', (e) => {
+        const key = appState.activePreset;
+        const val = e.target.value;
+        appState.data[key].dateText = val;
+        const parsedIso = parseIndonesianDateToIso(val);
+        if (parsedIso) {
+          appState.data[key].dateIso = parsedIso;
+          datePicker.value = parsedIso;
+        }
+        const current = appState.data[key];
+        document.getElementById('rcp-datetime').textContent = `${val.trim()}, ${(current.time || '00:00').trim()} WIB`;
+      });
+
+      // Listener Pemilih Jam -> Update jam + WIB di pratinjau resi
+      timePicker.addEventListener('change', (e) => {
+        const key = appState.activePreset;
+        const val = e.target.value;
+        if (val) {
+          appState.data[key].time = val;
+          renderAll();
+        }
+      });
+
+      // Listener Order ID -> Auto-uppercase & hapus karakter '#' ganda
+      orderIdInput.addEventListener('input', (e) => {
+        const key = appState.activePreset;
+        const cleaned = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 16);
+        e.target.value = cleaned;
+        appState.data[key].orderId = cleaned;
+
+        document.getElementById('rcp-order-id').textContent = `Order ID #${cleaned}`;
+        document.getElementById('badge-order-id').textContent = `Order ID #${cleaned}`;
+      });
+
+      // Listener Nomor Token -> Auto-format spasi tiap 4 digit & isi NO REF / NO REFF tanpa spasi
+      tokenInput.addEventListener('input', (e) => {
+        const key = appState.activePreset;
+        const { digitsOnly, spaced } = formatTokenDigits(e.target.value);
+        appState.data[key].tokenSpaced = spaced;
+        e.target.value = spaced;
+
+        updateTokenCounter(digitsOnly.length);
+        document.getElementById('rcp-token').textContent = spaced;
+        document.getElementById('rcp-ref-value').textContent = digitsOnly;
+      });
+
+      // Render awal tab pertama ("1. SMA")
+      renderAll();
+    });
+  </script>
+</body>
+</html>
